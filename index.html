@@ -1,0 +1,671 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>File Storage Manager — Project 04</title>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=Space+Mono:wght@400;700&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      *,
+      *::before,
+      *::after {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+
+      :root {
+        --bg: #0a0c10;
+        --surface: #111318;
+        --border: #1e2229;
+        --orange: #ff9900;
+        --accent: #4af0c4;
+        --red: #ff4d4d;
+        --text: #e8eaf0;
+        --muted: #5a6070;
+      }
+
+      html {
+        scroll-behavior: smooth;
+      }
+
+      body {
+        background: var(--bg);
+        color: var(--text);
+        font-family: "Space Mono", monospace;
+        font-size: 13px;
+        line-height: 1.6;
+        min-height: 100vh;
+        overflow-x: hidden;
+      }
+
+      body::before {
+        content: "";
+        position: fixed;
+        inset: 0;
+        background-image:
+          linear-gradient(rgba(255, 153, 0, 0.03) 1px, transparent 1px),
+          linear-gradient(90deg, rgba(255, 153, 0, 0.03) 1px, transparent 1px);
+        background-size: 40px 40px;
+        pointer-events: none;
+        z-index: 0;
+      }
+
+      body::after {
+        content: "";
+        position: fixed;
+        inset: 0;
+        background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
+        opacity: 0.4;
+        pointer-events: none;
+        z-index: 0;
+      }
+
+      /* NAV */
+      nav {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        z-index: 100;
+        border-bottom: 1px solid var(--border);
+        background: rgba(10, 12, 16, 0.85);
+        backdrop-filter: blur(12px);
+      }
+
+      nav .wrapper {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        height: 52px;
+      }
+
+      .nav-logo {
+        font-family: "Syne", sans-serif;
+        font-weight: 800;
+        font-size: 15px;
+        color: var(--orange);
+        letter-spacing: 0.05em;
+        text-decoration: none;
+      }
+
+      .nav-tag {
+        font-size: 11px;
+        color: var(--muted);
+        border: 1px solid var(--border);
+        padding: 3px 10px;
+        border-radius: 2px;
+      }
+
+      /* LAYOUT */
+      .wrapper {
+        position: relative;
+        z-index: 1;
+        max-width: 860px;
+        margin: 0 auto;
+        padding: 0 24px;
+      }
+
+      /* HERO */
+      .hero {
+        padding: 120px 0 64px;
+        border-bottom: 1px solid var(--border);
+      }
+
+      .hero-eyebrow {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 11px;
+        color: var(--accent);
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        margin-bottom: 24px;
+        opacity: 0;
+        animation: fadeUp 0.6s ease 0.1s forwards;
+      }
+
+      .hero-eyebrow::before {
+        content: "";
+        display: block;
+        width: 20px;
+        height: 1px;
+        background: var(--accent);
+      }
+
+      .hero h1 {
+        font-family: "Syne", sans-serif;
+        font-size: clamp(32px, 6vw, 56px);
+        font-weight: 800;
+        line-height: 1.05;
+        letter-spacing: -0.02em;
+        margin-bottom: 16px;
+        opacity: 0;
+        animation: fadeUp 0.6s ease 0.2s forwards;
+      }
+
+      .hero h1 span {
+        color: var(--orange);
+      }
+
+      .hero-desc {
+        color: var(--muted);
+        font-size: 13px;
+        line-height: 1.8;
+        max-width: 480px;
+        margin-bottom: 36px;
+        opacity: 0;
+        animation: fadeUp 0.6s ease 0.3s forwards;
+      }
+
+      .hero-meta {
+        display: flex;
+        gap: 32px;
+        flex-wrap: wrap;
+        opacity: 0;
+        animation: fadeUp 0.6s ease 0.4s forwards;
+      }
+
+      .meta-item {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+      }
+      .meta-label {
+        font-size: 10px;
+        text-transform: uppercase;
+        letter-spacing: 0.1em;
+        color: var(--muted);
+      }
+      .meta-value {
+        font-size: 13px;
+        color: var(--text);
+      }
+      .meta-value.ok {
+        color: var(--accent);
+      }
+      .meta-value.warn {
+        color: var(--orange);
+      }
+
+      /* SECTIONS */
+      section {
+        padding: 56px 0;
+        border-bottom: 1px solid var(--border);
+      }
+
+      .section-header {
+        display: flex;
+        align-items: baseline;
+        gap: 16px;
+        margin-bottom: 32px;
+      }
+      .section-num {
+        font-size: 11px;
+        color: var(--muted);
+      }
+      .section-title {
+        font-family: "Syne", sans-serif;
+        font-size: 18px;
+        font-weight: 700;
+        color: var(--text);
+        letter-spacing: 0.02em;
+      }
+
+      /* UPLOAD ZONE */
+      .upload-zone {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: 4px;
+        overflow: hidden;
+      }
+
+      .upload-inside {
+        padding: 25px;
+      }
+
+      .upload-topbar {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 10px 20px;
+        border-bottom: 1px solid var(--border);
+        background: var(--bg);
+      }
+
+      .upload-topbar-left {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+      }
+      .dots {
+        display: flex;
+        gap: 6px;
+      }
+      .dot {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+      }
+      .dot.r { background: #ff5f57; }
+      .dot.y { background: #febc2e; }
+      .dot.g { background: #28c840; }
+
+      .upload-label {
+        font-size: 10px;
+        text-transform: uppercase;
+        letter-spacing: 0.12em;
+        color: var(--muted);
+      }
+
+      .upload-badge {
+        font-size: 10px;
+        color: var(--accent);
+        border: 1px solid rgba(74, 240, 196, 0.2);
+        background: rgba(74, 240, 196, 0.06);
+        padding: 2px 8px;
+        border-radius: 2px;
+      }
+
+      .upload-body {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        flex-wrap: wrap;
+      }
+
+      .file-input-wrapper {
+        position: relative;
+        flex: 1;
+        min-width: 200px;
+      }
+
+      .file-input-wrapper input[type="file"] {
+        position: absolute;
+        inset: 0;
+        opacity: 0;
+        cursor: pointer;
+        width: 100%;
+      }
+
+      .file-input-display {
+        background: var(--bg);
+        border: 1px solid var(--border);
+        border-radius: 2px;
+        padding: 10px 16px;
+        font-family: "Space Mono", monospace;
+        font-size: 12px;
+        color: var(--muted);
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        transition: border-color 0.2s;
+        cursor: pointer;
+      }
+
+      .file-input-display:hover {
+        border-color: var(--orange);
+        color: var(--text);
+      }
+      .file-input-display .icon {
+        color: var(--orange);
+        font-size: 14px;
+      }
+
+      .btn-upload {
+        font-family: "Space Mono", monospace;
+        font-size: 11px;
+        font-weight: 700;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        background: var(--orange);
+        color: #0a0c10;
+        border: none;
+        border-radius: 2px;
+        padding: 10px 24px;
+        cursor: pointer;
+        transition: background 0.15s, transform 0.1s;
+        white-space: nowrap;
+      }
+
+      .btn-upload:hover { background: #ffad00; }
+      .btn-upload:active { transform: scale(0.98); }
+
+      /* FLASH MESSAGES */
+      .flash {
+        margin-bottom: 24px;
+        padding: 10px 16px;
+        border-radius: 2px;
+        font-size: 12px;
+        border-left: 2px solid;
+      }
+      .flash.success {
+        background: rgba(74, 240, 196, 0.08);
+        border-color: var(--accent);
+        color: var(--accent);
+      }
+      .flash.error {
+        background: rgba(255, 77, 77, 0.08);
+        border-color: var(--red);
+        color: var(--red);
+      }
+
+      /* FILE LIST */
+      .file-grid {
+        display: grid;
+        gap: 1px;
+        background: var(--border);
+        border: 1px solid var(--border);
+        border-radius: 4px;
+        overflow: hidden;
+      }
+
+      .file-grid-header {
+        display: grid;
+        grid-template-columns: 1fr 120px 80px;
+        background: var(--bg);
+        padding: 10px 20px;
+      }
+
+      .file-grid-header span {
+        font-size: 10px;
+        text-transform: uppercase;
+        letter-spacing: 0.12em;
+        color: var(--muted);
+      }
+
+      .file-row {
+        display: grid;
+        grid-template-columns: 1fr 120px 80px;
+        align-items: center;
+        background: var(--surface);
+        padding: 14px 20px;
+        transition: background 0.15s;
+      }
+
+      .file-row:hover { background: #141720; }
+
+      .file-name {
+        font-size: 12px;
+        color: var(--text);
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        overflow: hidden;
+      }
+
+      .file-name-icon {
+        color: var(--orange);
+        font-size: 11px;
+        flex-shrink: 0;
+      }
+
+      .file-name-text {
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+
+      .file-date {
+        font-size: 11px;
+        color: var(--muted);
+      }
+
+      .btn-delete {
+        font-family: "Space Mono", monospace;
+        font-size: 10px;
+        font-weight: 700;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        background: transparent;
+        color: var(--muted);
+        border: 1px solid var(--border);
+        border-radius: 2px;
+        padding: 4px 10px;
+        cursor: pointer;
+        transition: all 0.15s;
+      }
+
+      .btn-delete:hover {
+        border-color: var(--red);
+        color: var(--red);
+        background: rgba(255, 77, 77, 0.06);
+      }
+
+      .file-empty {
+        background: var(--surface);
+        padding: 48px 32px;
+        text-align: center;
+      }
+
+      .file-empty-icon {
+        font-size: 28px;
+        opacity: 0.2;
+        margin-bottom: 12px;
+      }
+      .file-empty-text {
+        font-size: 11px;
+        color: var(--muted);
+        letter-spacing: 0.08em;
+      }
+
+      /* FOOTER */
+      footer {
+        padding: 48px 0;
+      }
+
+      .footer-inner {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        flex-wrap: wrap;
+        gap: 16px;
+      }
+
+      .footer-left {
+        font-family: "Syne", sans-serif;
+        font-size: 13px;
+        font-weight: 700;
+        color: var(--muted);
+      }
+
+      .footer-left span { color: var(--orange); }
+
+      .footer-right {
+        font-size: 11px;
+        color: var(--muted);
+      }
+
+      /* ANIMATIONS */
+      @keyframes fadeUp {
+        from { opacity: 0; transform: translateY(16px); }
+        to   { opacity: 1; transform: translateY(0); }
+      }
+
+      .reveal {
+        opacity: 0;
+        transform: translateY(20px);
+        transition: opacity 0.6s ease, transform 0.6s ease;
+      }
+
+      .reveal.visible {
+        opacity: 1;
+        transform: none;
+      }
+
+      @media (max-width: 600px) {
+        .file-grid-header { grid-template-columns: 1fr 80px; }
+        .file-row         { grid-template-columns: 1fr 80px; }
+        .file-date        { display: none; }
+        .upload-body      { flex-direction: column; }
+        .btn-upload       { width: 100%; text-align: center; }
+      }
+    </style>
+  </head>
+  <body>
+
+    <!-- NAV -->
+    <nav>
+      <div class="wrapper">
+        <a class="nav-logo" href="#">ARTUR_W.CLOUD</a>
+        <span class="nav-tag">eu-west-1 · Ireland</span>
+      </div>
+    </nav>
+
+    <div class="wrapper">
+
+      <!-- HERO -->
+      <div class="hero">
+        <div class="hero-eyebrow">Cloud Engineering · Project 04</div>
+        <h1>File Upload &amp;<br /><span>Storage Manager</span></h1>
+        <p class="hero-desc">
+          A production-minded file management interface backed by AWS S3.
+          Files are stored in a private bucket, accessed via boto3 —
+          no hardcoded credentials, IAM Role only.
+        </p>
+        <div class="hero-meta">
+          <div class="meta-item">
+            <span class="meta-label">Status</span>
+            <span class="meta-value ok">● Live</span>
+          </div>
+          <div class="meta-item">
+            <span class="meta-label">Storage</span>
+            <span class="meta-value">Amazon S3</span>
+          </div>
+          <div class="meta-item">
+            <span class="meta-label">Auth</span>
+            <span class="meta-value warn">IAM Role</span>
+          </div>
+          <div class="meta-item">
+            <span class="meta-label">Phase</span>
+            <span class="meta-value warn">1 of 4</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- UPLOAD -->
+      <section class="reveal">
+        <div class="section-header">
+          <span class="section-num">01</span>
+          <span class="section-title">Upload File</span>
+        </div>
+
+        <div class="upload-zone">
+          <div class="upload-topbar">
+            <div class="upload-topbar-left">
+              <div class="dots">
+                <div class="dot r"></div>
+                <div class="dot y"></div>
+                <div class="dot g"></div>
+              </div>
+              <span class="upload-label">S3 Bucket · PUT Object</span>
+            </div>
+            <span class="upload-badge">boto3</span>
+          </div>
+
+          <div class="upload-inside">
+            {% with messages = get_flashed_messages(with_categories=true) %}
+              {% if messages %}
+                {% for category, message in messages %}
+                  <div class="flash {{ category }}">{{ message }}</div>
+                {% endfor %}
+              {% endif %}
+            {% endwith %}
+
+            <form action="/upload" method="POST" enctype="multipart/form-data">
+              <div class="upload-body">
+                <div class="file-input-wrapper">
+                  <input
+                    type="file"
+                    name="file"
+                    id="fileInput"
+                    onchange="updateLabel(this)"
+                  />
+                  <div class="file-input-display" id="fileLabel">
+                    <span class="icon">⬡</span>
+                    <span>Choose file to upload...</span>
+                  </div>
+                </div>
+                <button type="submit" class="btn-upload">Upload to S3</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      </section>
+
+      <!-- FILE LIST -->
+      <section class="reveal">
+        <div class="section-header">
+          <span class="section-num">02</span>
+          <span class="section-title">Stored Files</span>
+        </div>
+
+        <div class="file-grid">
+          <div class="file-grid-header">
+            <span>Filename</span>
+            <span>Uploaded</span>
+            <span>Action</span>
+          </div>
+
+          {% if files %}
+            {% for file in files %}
+            <div class="file-row">
+              <div class="file-name">
+                <span class="file-name-icon">▸</span>
+                <span class="file-name-text">{{ file.name }}</span>
+              </div>
+              <div class="file-date">{{ file.date if file.date else '—' }}</div>
+              <form action="/delete/{{ file.name }}" method="POST">
+                <button type="submit" class="btn-delete">Delete</button>
+              </form>
+            </div>
+            {% endfor %}
+          {% else %}
+            <div class="file-empty">
+              <div class="file-empty-icon">⬡</div>
+              <div class="file-empty-text">No files in bucket yet — upload something above</div>
+            </div>
+          {% endif %}
+        </div>
+      </section>
+
+      <!-- FOOTER -->
+      <footer class="reveal">
+        <div class="footer-inner">
+          <div class="footer-left">Built by <span>Artur Wagner</span> · Cloud Engineer</div>
+          <div class="footer-right">Phase 1 · AWS Fundamentals</div>
+        </div>
+      </footer>
+
+    </div>
+
+    <script>
+      function updateLabel(input) {
+        const label = document.getElementById("fileLabel");
+        if (input.files && input.files[0]) {
+          label.innerHTML = `
+            <span class="icon" style="color:var(--accent)">✓</span>
+            <span>${input.files[0].name}</span>
+          `;
+        }
+      }
+
+      const reveals = document.querySelectorAll(".reveal");
+      const io = new IntersectionObserver(
+        (entries) => {
+          entries.forEach((e) => {
+            if (e.isIntersecting) {
+              e.target.classList.add("visible");
+              io.unobserve(e.target);
+            }
+          });
+        },
+        { threshold: 0.1 }
+      );
+      reveals.forEach((el) => io.observe(el));
+    </script>
+  </body>
+</html>
